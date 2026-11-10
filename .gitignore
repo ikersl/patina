@@ -1,0 +1,16 @@
+/target
+hello
+showcase
+
+# Non-Patina projects
+dnd/
+PixelDash/
+IMPOSTOR-UPDATE/
+impostor-updog-html5/
+impostor-v4-html5/
+SRD_CC_v5.1.pdf
+.claude/
+
+# Only track html/patina/ from the site
+html/*
+!html/patina/

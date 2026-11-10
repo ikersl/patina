@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patina</title>
+<meta name="description" content="A programming language that feels like Python, runs like Rust.">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../favicon-180.png">
+<style>
+  :root{
+    --bg:#16161a;
+    --bg-2:#1d1d22;
+    --bg-3:#24242b;
+    --text:#e6e6e9;
+    --muted:#9a9aa2;
+    --line:#33333a;
+    --accent:#ff5ca8;
+    --accent-dim:#cc4888;
+    --green:#7ee787;
+    --blue:#79c0ff;
+    --orange:#ffa657;
+    --purple:#d2a8ff;
+    --yellow:#e3b341;
+    --maxw:680px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6;
+    min-height:100vh;
+    padding:48px 24px;
+    -webkit-font-smoothing:antialiased;
+  }
+  main{width:100%;max-width:var(--maxw);margin:0 auto}
+
+  /* --- Hero --- */
+  .hero{text-align:center;padding-bottom:40px;border-bottom:1px solid var(--line)}
+  .hero-badge{
+    display:inline-block;
+    font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--accent);
+    border:1px solid var(--accent-dim);border-radius:20px;
+    padding:4px 14px;margin-bottom:16px;
+  }
+  .hero h1{font-size:2.6rem;font-weight:750;letter-spacing:-.02em;margin-bottom:4px}
+  .hero h1 span{color:var(--accent)}
+  .hero .tagline{color:var(--muted);font-size:1.1rem;margin-bottom:8px}
+  .hero .joke{color:var(--muted);font-size:.82rem;font-style:italic;margin-bottom:24px}
+  .hero-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .btn{
+    display:inline-block;padding:10px 22px;border-radius:8px;
+    font-family:inherit;font-size:.9rem;font-weight:600;
+    text-decoration:none;cursor:pointer;border:none;
+    transition:filter .15s;
+  }
+  .btn:hover{filter:brightness(1.15)}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-secondary{background:var(--bg-3);color:var(--text);border:1px solid var(--line)}
+
+  /* --- Code blocks --- */
+  pre{
+    background:var(--bg-2);border:1px solid var(--line);border-radius:10px;
+    padding:18px 20px;overflow-x:auto;font-size:.85rem;line-height:1.65;
+    font-family:"SF Mono",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  pre .cm{color:#6a6a75}
+  pre .kw{color:var(--purple)}
+  pre .fn{color:var(--blue)}
+  pre .str{color:var(--green)}
+  pre .num{color:var(--orange)}
+  pre .ty{color:var(--yellow)}
+  pre .op{color:var(--accent)}
+  pre .bi{color:var(--blue)}
+
+  /* --- Section --- */
+  section{padding:36px 0}
+  section+section{border-top:1px solid var(--line)}
+  section h2{font-size:1.15rem;font-weight:650;margin-bottom:16px}
+  section p{color:var(--muted);font-size:.9rem;margin-bottom:16px}
+
+  /* --- Feature grid --- */
+  .features{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;
+    margin-bottom:16px;
+  }
+  @media(max-width:500px){.features{grid-template-columns:1fr}}
+  .feat{
+    background:var(--bg-2);border:1px solid var(--line);border-radius:10px;
+    padding:16px 18px;
+  }
+  .feat h3{font-size:.9rem;font-weight:650;margin-bottom:4px}
+  .feat p{color:var(--muted);font-size:.82rem;margin:0}
+
+  /* --- Comparison table --- */
+  .cmp{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:16px}
+  .cmp th{
+    text-align:left;font-weight:650;padding:10px 12px;
+    border-bottom:2px solid var(--line);font-size:.8rem;
+    text-transform:uppercase;letter-spacing:.04em;color:var(--muted);
+  }
+  .cmp td{padding:9px 12px;border-bottom:1px solid var(--line)}
+  .cmp tr:last-child td{border-bottom:none}
+  .cmp code{
+    font-family:"SF Mono",Consolas,"Liberation Mono",Menlo,monospace;
+    font-size:.82rem;background:var(--bg-3);padding:2px 6px;border-radius:4px;
+  }
+  .cmp .label{color:var(--muted);font-size:.82rem}
+
+  /* --- Links list --- */
+  ul{list-style:none}
+  li{border-bottom:1px solid var(--line)}
+  li:last-child{border-bottom:none}
+  li a{
+    display:flex;justify-content:space-between;align-items:center;gap:16px;
+    padding:14px 4px;text-decoration:none;color:var(--text);
+  }
+  li a:hover{background:var(--bg-2);border-radius:6px}
+  .name{font-weight:600}
+  .desc{color:var(--muted);font-size:.85rem;text-align:right}
+  .arrow{color:var(--muted);font-size:.85rem}
+
+  /* --- Install --- */
+  .install-cmd{
+    display:flex;align-items:center;gap:12px;
+    background:var(--bg-2);border:1px solid var(--line);border-radius:10px;
+    padding:14px 18px;font-size:.85rem;
+    font-family:"SF Mono",Consolas,"Liberation Mono",Menlo,monospace;
+    margin-bottom:8px;
+  }
+  .install-cmd .prompt{color:var(--muted);user-select:none}
+  .install-cmd .cmd{color:var(--text);flex:1}
+  .copy-btn{
+    background:none;border:1px solid var(--line);border-radius:6px;
+    color:var(--muted);padding:4px 10px;font-size:.78rem;
+    font-family:inherit;cursor:pointer;
+  }
+  .copy-btn:hover{color:var(--text);border-color:var(--muted)}
+
+  /* --- Footer --- */
+  footer{
+    padding-top:32px;color:var(--muted);font-size:.8rem;text-align:center;
+    border-top:1px solid var(--line);margin-top:8px;
+  }
+  footer a{color:var(--accent);text-decoration:none}
+  footer a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<main>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-badge">v0.2</div>
+    <h1><span>Patina</span></h1>
+    <p class="tagline">Feels like Python. Runs like Rust.</p>
+    <p class="joke">Iron rusts. C(silver) gets patina.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#install">Get Started</a>
+      <a class="btn btn-secondary" href="https://github.com" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn-secondary" href="syntax.html">Syntax Ref</a>
+    </div>
+  </div>
+
+  <!-- Example -->
+  <section>
+    <h2>Hello, Patina</h2>
+    <pre><span class="cm"># No semicolons. No macros. No lifetimes.</span>
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">var</span> name <span class="op">=</span> <span class="str">"world"</span>
+    <span class="bi">println</span>(<span class="str">"Hello, {name}!"</span>)
+
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="num">5</span>) {
+        <span class="bi">println</span>(<span class="str">"  {i} squared = {i <span class="op">**</span> <span class="num">2</span>}"</span>)
+    }
+}
+
+<span class="kw">class</span> <span class="ty">Circle</span> { radius: <span class="ty">float</span> }
+
+<span class="kw">methods</span> <span class="ty">Circle</span> {
+    <span class="kw">fn</span> <span class="fn">area</span>(self) <span class="op">-></span> <span class="ty">float</span> {
+        <span class="kw">return</span> <span class="bi">PI</span> <span class="op">*</span> self.radius <span class="op">**</span> <span class="num">2</span>
+    }
+}</pre>
+    <p>Patina source transpiles to Rust, then compiles to a native binary via <code style="background:var(--bg-3);padding:2px 6px;border-radius:4px;font-size:.85rem">rustc</code>. You get Rust's speed, safety, and zero-cost abstractions — without the syntax tax.</p>
+  </section>
+
+  <!-- Features -->
+  <section>
+    <h2>Why Patina?</h2>
+    <div class="features">
+      <div class="feat">
+        <h3>No semicolons</h3>
+        <p>Newlines end statements. Write code, not punctuation.</p>
+      </div>
+      <div class="feat">
+        <h3>Simple types</h3>
+        <p><code>int</code>, <code>float</code>, <code>string</code>, <code>bool</code> — not <code>i64</code>, <code>f64</code>, <code>String</code>.</p>
+      </div>
+      <div class="feat">
+        <h3>String interpolation</h3>
+        <p><code>"{name} is {age}"</code> — expressions inside strings, no macros.</p>
+      </div>
+      <div class="feat">
+        <h3>No lifetimes</h3>
+        <p>The transpiler handles borrowing. You just write code.</p>
+      </div>
+      <div class="feat">
+        <h3>50+ builtins</h3>
+        <p><code>sqrt</code>, <code>split</code>, <code>map</code>, <code>read_file</code>, <code>input</code> — batteries included.</p>
+      </div>
+      <div class="feat">
+        <h3>Native speed</h3>
+        <p>Compiles to machine code through Rust. No GC, no runtime.</p>
+      </div>
+      <div class="feat">
+        <h3>Traits & generics</h3>
+        <p>Full Rust-style polymorphism with cleaner syntax.</p>
+      </div>
+      <div class="feat">
+        <h3><code># comments</code></h3>
+        <p>Python-style comments. <code>**</code> for power. <code>range()</code> for loops.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section>
+    <h2>Patina vs Rust</h2>
+    <table class="cmp">
+      <tr>
+        <th>What</th>
+        <th>Patina</th>
+        <th>Rust</th>
+      </tr>
+      <tr>
+        <td class="label">Variable</td>
+        <td><code>var x = 5</code></td>
+        <td><code>let x: i64 = 5;</code></td>
+      </tr>
+      <tr>
+        <td class="label">Mutable</td>
+        <td><code>mut x = 5</code></td>
+        <td><code>let mut x = 5;</code></td>
+      </tr>
+      <tr>
+        <td class="label">Print</td>
+        <td><code>println("hi {x}")</code></td>
+        <td><code>println!("hi {}", x);</code></td>
+      </tr>
+      <tr>
+        <td class="label">Input</td>
+        <td><code>input("Name: ")</code></td>
+        <td><code>stdin().read_line(…)</code></td>
+      </tr>
+      <tr>
+        <td class="label">Types</td>
+        <td><code>int</code>, <code>float</code>, <code>string</code></td>
+        <td><code>i64</code>, <code>f64</code>, <code>String</code></td>
+      </tr>
+      <tr>
+        <td class="label">Power</td>
+        <td><code>x ** 2</code></td>
+        <td><code>x.pow(2)</code></td>
+      </tr>
+      <tr>
+        <td class="label">Class</td>
+        <td><code>class Point { ... }</code></td>
+        <td><code>struct Point { ... }</code></td>
+      </tr>
+      <tr>
+        <td class="label">Methods</td>
+        <td><code>methods Point { ... }</code></td>
+        <td><code>impl Point { ... }</code></td>
+      </tr>
+      <tr>
+        <td class="label">Imports</td>
+        <td><code>use std.io</code></td>
+        <td><code>use std::io;</code></td>
+      </tr>
+      <tr>
+        <td class="label">Semicolons</td>
+        <td>never</td>
+        <td>everywhere</td>
+      </tr>
+      <tr>
+        <td class="label">Lifetimes</td>
+        <td>never</td>
+        <td><code>'a</code> everywhere</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- Traits example -->
+  <section>
+    <h2>Traits & Generics</h2>
+    <pre><span class="kw">trait</span> <span class="ty">Shape</span> {
+    <span class="kw">fn</span> <span class="fn">area</span>(self) <span class="op">-></span> <span class="ty">float</span>
+    <span class="kw">fn</span> <span class="fn">name</span>(self) <span class="op">-></span> <span class="ty">string</span> {
+        <span class="kw">return</span> <span class="str">"shape"</span>
+    }
+}
+
+<span class="kw">fn</span> <span class="fn">print_area</span><span class="op">&lt;</span><span class="ty">T</span>: <span class="ty">Shape</span><span class="op">&gt;</span>(s: <span class="ty">T</span>) {
+    <span class="bi">println</span>(<span class="str">"{s.name()} has area {s.area()}"</span>)
+}
+
+<span class="kw">methods</span> <span class="ty">Shape</span> <span class="kw">for</span> <span class="ty">Circle</span> {
+    <span class="kw">fn</span> <span class="fn">area</span>(self) <span class="op">-></span> <span class="ty">float</span> {
+        <span class="kw">return</span> <span class="bi">PI</span> <span class="op">*</span> self.radius <span class="op">**</span> <span class="num">2</span>
+    }
+    <span class="kw">fn</span> <span class="fn">name</span>(self) <span class="op">-></span> <span class="ty">string</span> {
+        <span class="kw">return</span> <span class="str">"circle"</span>
+    }
+}</pre>
+  </section>
+
+  <!-- Stdlib -->
+  <section>
+    <h2>Standard Library</h2>
+    <p>All built in — no imports needed.</p>
+    <div class="features">
+      <div class="feat">
+        <h3>Math</h3>
+        <p><code>sqrt</code> <code>abs</code> <code>pow</code> <code>min</code> <code>max</code> <code>clamp</code> <code>floor</code> <code>ceil</code> <code>round</code> <code>sin</code> <code>cos</code> <code>tan</code> <code>log</code></p>
+      </div>
+      <div class="feat">
+        <h3>Strings</h3>
+        <p><code>split</code> <code>join</code> <code>trim</code> <code>to_upper</code> <code>to_lower</code> <code>contains</code> <code>replace</code> <code>starts_with</code></p>
+      </div>
+      <div class="feat">
+        <h3>Collections</h3>
+        <p><code>sort</code> <code>reverse</code> <code>map</code> <code>filter</code> <code>enumerate</code> <code>zip</code> <code>len</code> <code>push</code> <code>range</code></p>
+      </div>
+      <div class="feat">
+        <h3>I/O &amp; Misc</h3>
+        <p><code>print</code> <code>println</code> <code>input</code> <code>read_file</code> <code>write_file</code> <code>exit</code> <code>assert</code> <code>str</code> <code>int</code></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <section id="install">
+    <h2>Get Started</h2>
+    <p>You need Rust installed (<a href="https://rustup.rs" target="_blank" rel="noopener" style="color:var(--accent)">rustup.rs</a>). Then:</p>
+    <div class="install-cmd">
+      <span class="prompt">$</span>
+      <span class="cmd">git clone https://github.com/user/patina && cd patina</span>
+      <button class="copy-btn" onclick="copy(this)" data-cmd="git clone https://github.com/user/patina && cd patina">copy</button>
+    </div>
+    <div class="install-cmd">
+      <span class="prompt">$</span>
+      <span class="cmd">cargo build --release</span>
+      <button class="copy-btn" onclick="copy(this)" data-cmd="cargo build --release">copy</button>
+    </div>
+    <div class="install-cmd">
+      <span class="prompt">$</span>
+      <span class="cmd">./target/release/patina hello.pa --run</span>
+      <button class="copy-btn" onclick="copy(this)" data-cmd="./target/release/patina hello.pa --run">copy</button>
+    </div>
+    <p style="margin-top:12px">Or run directly with <code style="background:var(--bg-3);padding:2px 6px;border-radius:4px;font-size:.85rem">cargo run -- file.pa --run</code> during development.</p>
+  </section>
+
+  <!-- Links -->
+  <section>
+    <h2>Resources</h2>
+    <ul>
+      <li><a href="syntax.html"><span class="name">Syntax Reference</span><span class="desc">Full language docs</span></a></li>
+      <li><a href="https://github.com" target="_blank" rel="noopener"><span class="name">Source Code</span><span class="desc">GitHub</span></a></li>
+      <li><a href="../"><span class="name">Chaimon</span><span class="desc">Home</span></a></li>
+    </ul>
+  </section>
+
+  <footer>
+    Built by <a href="../">Chaimon</a>. No rights reserved.
+  </footer>
+
+</main>
+<script>
+function copy(btn){
+  const cmd = btn.getAttribute("data-cmd");
+  navigator.clipboard.writeText(cmd).then(()=>{
+    btn.textContent="copied!";
+    setTimeout(()=>btn.textContent="copy",1500);
+  });
+}
+</script>
+</body>
+</html>

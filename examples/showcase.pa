@@ -1,0 +1,228 @@
+# Patina v0.2 — Full Feature Showcase
+
+use std.collections.HashMap
+
+const MAX_ITEMS: int = 100
+const VERSION = "0.2.0"
+
+type IntList = Vec<int>
+
+# --- Traits ---
+
+trait Describable {
+    fn describe(self) -> string
+    fn kind(self) -> string {
+        return "unknown"
+    }
+}
+
+trait HasArea {
+    fn area(self) -> float
+}
+
+# --- Structs with generics ---
+
+class Pair<T> {
+    first: T
+    second: T
+}
+
+class Circle {
+    radius: float
+}
+
+class Rectangle {
+    width: float
+    height: float
+}
+
+# --- Impl blocks ---
+
+methods Circle {
+    fn new(radius: float) -> Circle {
+        return Circle { radius }
+    }
+}
+
+methods HasArea for Circle {
+    fn area(self) -> float {
+        return PI * self.radius ** 2
+    }
+}
+
+methods Describable for Circle {
+    fn describe(self) -> string {
+        return "Circle(r={self.radius})"
+    }
+    fn kind(self) -> string {
+        return "circle"
+    }
+}
+
+methods HasArea for Rectangle {
+    fn area(self) -> float {
+        return self.width * self.height
+    }
+}
+
+methods Describable for Rectangle {
+    fn describe(self) -> string {
+        return "Rect({self.width}x{self.height})"
+    }
+    fn kind(self) -> string {
+        return "rectangle"
+    }
+}
+
+# --- Generic functions ---
+
+fn largest<T: PartialOrd>(a: T, b: T) -> T {
+    if a > b {
+        return a
+    }
+    return b
+}
+
+fn print_info<T: Describable + HasArea>(shape: T) {
+    println("{shape.describe()} — area: {shape.area()}, kind: {shape.kind()}")
+}
+
+# --- Enum ---
+
+enum Color {
+    Red
+    Green
+    Blue
+    Custom(int, int, int)
+}
+
+fn color_name(c: Color) -> string {
+    match c {
+        Color::Red => return "red"
+        Color::Green => return "green"
+        Color::Blue => return "blue"
+        Color::Custom(r, g, b) => return "rgb({r},{g},{b})"
+    }
+    return "?"
+}
+
+# --- Main ---
+
+fn main() {
+    println("=== Patina v{VERSION} Showcase ===\n")
+
+    # Constants
+    println("Max items: {MAX_ITEMS}")
+    println("PI = {PI}")
+    println("E  = {E}")
+
+    # Structs + traits
+    var c = Circle.new(5.0)
+    var r = Rectangle { width: 10.0, height: 3.0 }
+    print_info(c)
+    print_info(r)
+
+    # Generics
+    var big = largest(42, 17)
+    println("\nlargest(42, 17) = {big}")
+
+    # Enums
+    var color = Color::Custom(255, 128, 0)
+    println("Color: {color_name(color)}")
+
+    # Math stdlib
+    println("\n--- Math ---")
+    println("sqrt(144)  = {sqrt(144.0)}")
+    println("abs(-42)   = {abs(-42)}")
+    println("pow(2, 10) = {pow(2, 10)}")
+    println("min(3, 7)  = {min(3, 7)}")
+    println("max(3, 7)  = {max(3, 7)}")
+    println("floor(3.7) = {floor(3.7)}")
+    println("ceil(3.2)  = {ceil(3.2)}")
+    println("round(3.5) = {round(3.5)}")
+    println("sin(0)     = {sin(0.0)}")
+    println("clamp(15, 0, 10) = {clamp(15, 0, 10)}")
+
+    # String stdlib
+    println("\n--- Strings ---")
+    var greeting = "Hello, World!"
+    println("upper:       {to_upper(greeting)}")
+    println("lower:       {to_lower(greeting)}")
+    var padded = "  hi  "
+    var trimmed = trim(padded)
+    println("trim:        '{trimmed}'")
+    var has_world = contains(greeting, "World")
+    println("contains:    {has_world}")
+    var hw = starts_with(greeting, "Hello")
+    println("starts_with: {hw}")
+    var replaced = replace(greeting, "World", "Patina")
+    println("replace:     {replaced}")
+    var csv = "a,b,c"
+    var sep = ","
+    var parts = split(csv, sep)
+    println("split:       {parts[0]}, {parts[1]}, {parts[2]}")
+    var delim = " | "
+    var joined = join(parts, delim)
+    println("join:        {joined}")
+
+    # Collections
+    println("\n--- Collections ---")
+    var nums = [5, 3, 8, 1, 9, 2]
+    var sorted = sort(nums)
+    println("sorted:   {sorted[0]}, {sorted[1]}, {sorted[2]}, {sorted[3]}, {sorted[4]}, {sorted[5]}")
+
+    var doubled = map([1, 2, 3, 4], |x| x * 2)
+    println("doubled:  {doubled[0]}, {doubled[1]}, {doubled[2]}, {doubled[3]}")
+
+    # HashMap
+    mut scores: HashMap<string, int> = HashMap.new()
+    var alice = "Alice"
+    var bob = "Bob"
+    var charlie = "Charlie"
+    scores.insert(alice.clone(), 95)
+    scores.insert(bob.clone(), 87)
+    scores.insert(charlie.clone(), 92)
+    println("\nScores:")
+    println("  Alice:   {scores[alice.clone()]}")
+    println("  Bob:     {scores[bob.clone()]}")
+
+    # Type casting
+    println("\n--- Casting ---")
+    var x = 42
+    var f = x as float
+    println("{x} as float = {f}")
+
+    # Type alias
+    var list: IntList = [10, 20, 30]
+    println("IntList: {list[0]}, {list[1]}, {list[2]}")
+
+    # Pair<T> generic struct
+    var hello = "hello"
+    var world = "world"
+    var pair = Pair { first: hello, second: world }
+    println("\nPair: ({pair.first}, {pair.second})")
+
+    # Fibonacci with while
+    println("\n--- Fibonacci ---")
+    mut a = 0
+    mut b = 1
+    mut i = 0
+    while i < 10 {
+        print("{a} ")
+        var temp = b
+        b = a + b
+        a = temp
+        i += 1
+    }
+    println("")
+
+    # Range with step
+    println("\n--- Ranges ---")
+    print("step(0, 20, 3): ")
+    for n in range(0, 20, 3) {
+        print("{n} ")
+    }
+    println("")
+
+    println("\nDone!")
+}

@@ -1,0 +1,7 @@
+[package]
+name = "patina"
+version = "0.2.0"
+edition = "2024"
+description = "A programming language that feels like Python, runs like Rust"
+
+[dependencies]
