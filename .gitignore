@@ -11,6 +11,4 @@ impostor-v4-html5/
 SRD_CC_v5.1.pdf
 .claude/
 
-# Only track html/patina/ from the site
-html/*
-!html/patina/
+html/
