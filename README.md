@@ -68,6 +68,7 @@ cargo run -- examples/hello.pa --run
 - **Generics & traits** — full Rust-style polymorphism
 - **Enums with pattern matching** — `match` with `=>` arms
 - **50+ builtin functions** — math, strings, collections, I/O
+- **Networking & security modules** — `use net` for HTTP/TCP/DNS, `use seckit` for port scanning and recon
 - **Colored error messages** — with source context and caret
 
 ## Standard Library
@@ -82,6 +83,46 @@ All built in — no imports needed.
 | **I/O** | `print` `println` `input` `read_file` `write_file` `append_file` `file_exists` |
 | **Conversion** | `str` `int` `float` |
 | **Constants** | `PI` `E` `TAU` `INFINITY` `MAX_INT` `MIN_INT` |
+
+## Networking Modules
+
+Patina includes opt-in modules for networking and security — just `use` them:
+
+```patina
+use net
+
+fn main() {
+    var body = net.http_get("http://example.com")
+    println(body)
+}
+```
+
+```patina
+use seckit
+
+fn main() {
+    var ports = seckit.scan_fast("scanme.nmap.org", 1, 1024)
+    for p in ports {
+        var banner = seckit.grab("scanme.nmap.org", p)
+        println(":{p} — {banner}")
+    }
+}
+```
+
+| Module | Function | Description |
+|--------|----------|-------------|
+| **net** | `http_get(url)` | HTTP GET request |
+| **net** | `http_post(url, body)` | HTTP POST request |
+| **net** | `tcp_exchange(host, port, data)` | Raw TCP send/receive |
+| **net** | `dns_lookup(host)` | Resolve hostname to IPs |
+| **net** | `local_ip()` | Get local IP address |
+| **seckit** | `scan(host, start, end)` | Port scan (sequential) |
+| **seckit** | `scan_fast(host, start, end)` | Port scan (threaded) |
+| **seckit** | `grab(host, port)` | Banner grabbing |
+| **seckit** | `headers(url)` | Fetch HTTP response headers |
+| **seckit** | `resolve(host)` | DNS resolution |
+
+Programs using `net` auto-build with Cargo (for the `ureq` HTTP crate). Programs using only `seckit` compile with plain `rustc` — no external dependencies.
 
 ## Example
 

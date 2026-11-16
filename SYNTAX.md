@@ -46,6 +46,8 @@ patina hello.pa --run
 - [Constants & Type Aliases](#constants--type-aliases)
 - [Type Casting](#type-casting)
 - [Standard Library](#standard-library)
+- [Networking — `net` Module](#networking--net-module)
+- [Security Toolkit — `seckit` Module](#security-toolkit--seckit-module)
 - [Patina vs Rust Cheat Sheet](#patina-vs-rust-cheat-sheet)
 
 ---
@@ -567,6 +569,90 @@ All of these are built-in — no imports needed.
 | `type_of(x)` | Get type name (for debugging) |
 | `assert(cond)` | Panic if false |
 | `assert(cond, msg)` | Panic with message |
+
+---
+
+## Networking — `net` Module
+
+Import with `use net` to get HTTP, TCP, and DNS capabilities. Programs using this module compile with Cargo (pulling in the `ureq` crate automatically).
+
+```patina
+use net
+
+fn main() {
+    # HTTP GET
+    var html = net.http_get("http://example.com")
+    println(html)
+
+    # HTTP POST
+    var resp = net.http_post("https://httpbin.org/post", "hello")
+    println(resp)
+
+    # Raw TCP exchange
+    var banner = net.tcp_exchange("smtp.example.com", 25, "EHLO test\r\n")
+    println(banner)
+
+    # DNS lookup — returns array of IP strings
+    var ips = net.dns_lookup("google.com")
+    for ip in ips {
+        println(ip)
+    }
+
+    # Local IP address
+    var my_ip = net.local_ip()
+    println("My IP: {my_ip}")
+}
+```
+
+| Function | Signature | Returns | Description |
+|----------|-----------|---------|-------------|
+| `net.http_get` | `(url: string)` | `string` | HTTP GET request, returns response body |
+| `net.http_post` | `(url: string, body: string)` | `string` | HTTP POST with a string body |
+| `net.tcp_exchange` | `(host: string, port: int, data: string)` | `string` | Connect via TCP, send data, read response |
+| `net.dns_lookup` | `(host: string)` | `Vec<string>` | Resolve hostname to list of IP addresses |
+| `net.local_ip` | `()` | `string` | Get this machine's local IP address |
+
+---
+
+## Security Toolkit — `seckit` Module
+
+Import with `use seckit` for port scanning, banner grabbing, and recon. This module uses only the Rust standard library — no external crates — so it compiles with plain `rustc` (fast).
+
+```patina
+use seckit
+
+fn main() {
+    var target = "scanme.nmap.org"
+
+    # DNS resolution
+    var ips = seckit.resolve(target)
+    println("Resolved: {ips[0]}")
+
+    # Sequential port scan (ports 1-100)
+    var open = seckit.scan(target, 1, 100)
+
+    # Threaded port scan (200 threads per batch, faster for large ranges)
+    var open_fast = seckit.scan_fast(target, 1, 1024)
+
+    # Banner grabbing
+    for p in open_fast {
+        var banner = seckit.grab(target, p)
+        println(":{p} — {banner}")
+    }
+
+    # HTTP response headers
+    var hdrs = seckit.headers("http://example.com")
+    println(hdrs)
+}
+```
+
+| Function | Signature | Returns | Description |
+|----------|-----------|---------|-------------|
+| `seckit.scan` | `(host: string, start: int, end: int)` | `Vec<int>` | Sequential port scan with 300ms timeout |
+| `seckit.scan_fast` | `(host: string, start: int, end: int)` | `Vec<int>` | Threaded port scan (200 threads/batch, 500ms timeout) |
+| `seckit.grab` | `(host: string, port: int)` | `string` | Connect to port, read banner (1s timeout) |
+| `seckit.headers` | `(url: string)` | `string` | Fetch HTTP response headers as text |
+| `seckit.resolve` | `(host: string)` | `Vec<string>` | Resolve hostname to list of IP addresses |
 
 ---
 
