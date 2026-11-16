@@ -1,0 +1,12 @@
+use net
+
+fn main() {
+    println("=== Net Module Test ===")
+    var ips = net.dns_lookup("google.com")
+    println("Google IPs:")
+    for ip in ips {
+        println("  {ip}")
+    }
+    var my_ip = net.local_ip()
+    println("My local IP: {my_ip}")
+}

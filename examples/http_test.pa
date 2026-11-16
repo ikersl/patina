@@ -1,0 +1,9 @@
+use net
+
+fn main() {
+    println("Fetching example.com...")
+    var body = net.http_get("http://example.com")
+    var lines = split(body, "\n")
+    println("Got {len(lines)} lines")
+    println("First line: {lines[0]}")
+}

@@ -1,0 +1,29 @@
+use seckit
+
+fn main() {
+    println("=== Patina Port Scanner ===\n")
+
+    var target = "scanme.nmap.org"
+    var ips = seckit.resolve(target)
+    println("Target: {target}")
+    println("Resolved: {ips[0]}\n")
+
+    println("Scanning ports 1-1024 (fast)...")
+    var ports = seckit.scan_fast(target, 1, 1024)
+
+    if len(ports) == 0 {
+        println("No open ports found.")
+    } else {
+        println("Found {len(ports)} open port(s):\n")
+        for port in ports {
+            var banner = seckit.grab(target, port)
+            if len(banner) > 0 {
+                println("  :{port}  — {banner}")
+            } else {
+                println("  :{port}  — (no banner)")
+            }
+        }
+    }
+
+    println("\nDone.")
+}

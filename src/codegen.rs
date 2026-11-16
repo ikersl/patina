@@ -2,9 +2,16 @@ use crate::ast::*;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 
+pub struct GenerateResult {
+    pub code: String,
+    pub crates: Vec<(String, String)>,
+}
+
 pub struct Codegen {
     output: String,
     indent: usize,
+    uses_net: bool,
+    uses_seckit: bool,
 }
 
 impl Codegen {
@@ -12,16 +19,38 @@ impl Codegen {
         Self {
             output: String::new(),
             indent: 0,
+            uses_net: false,
+            uses_seckit: false,
         }
     }
 
-    pub fn generate(mut self, program: &Program) -> String {
+    pub fn generate(mut self, program: &Program) -> GenerateResult {
+        self.scan_imports(program);
         self.emit_prelude(program);
         for item in &program.items {
             self.emit_item(item);
             self.output.push('\n');
         }
-        self.output
+        let mut crates = Vec::new();
+        if self.uses_net {
+            crates.push(("ureq".into(), "2.12".into()));
+        }
+        GenerateResult {
+            code: self.output,
+            crates,
+        }
+    }
+
+    fn scan_imports(&mut self, program: &Program) {
+        for item in &program.items {
+            if let Item::Use(u) = item {
+                match u.path.first().map(|s| s.as_str()) {
+                    Some("net") => self.uses_net = true,
+                    Some("seckit") => self.uses_seckit = true,
+                    _ => {}
+                }
+            }
+        }
     }
 
     fn emit_prelude(&mut self, program: &Program) {
@@ -224,6 +253,10 @@ impl Codegen {
     // --- Use ---
 
     fn emit_use(&mut self, u: &UseDecl) {
+        let first = u.path.first().map(|s| s.as_str());
+        if first == Some("net") || first == Some("seckit") {
+            return;
+        }
         let path = u.path.join("::");
         if u.glob {
             self.writeln(&format!("use {path}::*;"));
@@ -495,9 +528,16 @@ impl Codegen {
             }
             Expr::Call { func, args } => self.emit_call(func, args),
             Expr::MethodCall { object, method, args } => {
+                if let Expr::Ident(module) = object.as_ref() {
+                    if module == "net" && self.uses_net {
+                        return self.emit_net_call(method, args);
+                    }
+                    if module == "seckit" && self.uses_seckit {
+                        return self.emit_seckit_call(method, args);
+                    }
+                }
                 let obj = self.expr_to_rust(object);
                 let a: Vec<String> = args.iter().map(|a| self.expr_to_rust(a)).collect();
-                // Type::method() → Type::method() (associated function)
                 if let Expr::Ident(name) = object.as_ref() {
                     if name.chars().next().is_some_and(|c| c.is_uppercase()) {
                         return format!("{obj}::{method}({})", a.join(", "));
@@ -594,7 +634,12 @@ impl Codegen {
                 "println" => return self.emit_println_call(args),
                 "input" => return self.emit_input_call(args),
                 "range" => return self.emit_range(args),
-                "len" => return self.emit_builtin_method(args, "len()"),
+                "len" => {
+                    if args.len() == 1 {
+                        let a = self.expr_to_rust(&args[0]);
+                        return format!("({a}.len() as i64)");
+                    }
+                }
                 "push" => return self.emit_builtin_2arg(args, "push"),
                 "pop" => return self.emit_builtin_method(args, "pop().unwrap()"),
                 "str" => return self.emit_to_string(args),
@@ -1058,6 +1103,180 @@ impl Codegen {
         } else {
             format!("format!(\"{parts_fmt}\", {})", args.join(", "))
         }
+    }
+
+    // --- net module ---
+
+    fn emit_net_call(&self, method: &str, args: &[Expr]) -> String {
+        match method {
+            "http_get" => {
+                if args.len() == 1 {
+                    let url = self.expr_to_rust(&args[0]);
+                    return format!("ureq::get(&*{url}).call().unwrap().into_string().unwrap()");
+                }
+            }
+            "http_post" => {
+                if args.len() == 2 {
+                    let url = self.expr_to_rust(&args[0]);
+                    let body = self.expr_to_rust(&args[1]);
+                    return format!("ureq::post(&*{url}).send_string(&*{body}).unwrap().into_string().unwrap()");
+                }
+            }
+            "tcp_exchange" => {
+                if args.len() == 3 {
+                    let host = self.expr_to_rust(&args[0]);
+                    let port = self.expr_to_rust(&args[1]);
+                    let data = self.expr_to_rust(&args[2]);
+                    return format!(
+                        "{{ use std::io::{{Read, Write}}; \
+                        let mut __s = std::net::TcpStream::connect(format!(\"{{}}:{{}}\", {host}, {port})).unwrap(); \
+                        __s.set_read_timeout(Some(std::time::Duration::from_secs(5))).ok(); \
+                        __s.write_all({data}.as_bytes()).unwrap(); \
+                        let mut __buf = vec![0u8; 8192]; \
+                        let __n = __s.read(&mut __buf).unwrap_or(0); \
+                        String::from_utf8_lossy(&__buf[..__n]).to_string() }}"
+                    );
+                }
+            }
+            "dns_lookup" => {
+                if args.len() == 1 {
+                    let host = self.expr_to_rust(&args[0]);
+                    return format!(
+                        "{{ use std::net::ToSocketAddrs; \
+                        format!(\"{{}}:0\", {host}).to_socket_addrs() \
+                        .unwrap().map(|a| a.ip().to_string()).collect::<Vec<_>>() }}"
+                    );
+                }
+            }
+            "local_ip" => {
+                if args.is_empty() {
+                    return "{{ \
+                        let __s = std::net::UdpSocket::bind(\"0.0.0.0:0\").unwrap(); \
+                        __s.connect(\"8.8.8.8:80\").unwrap(); \
+                        __s.local_addr().unwrap().ip().to_string() \
+                    }}".into();
+                }
+            }
+            _ => {}
+        }
+        format!("/* net.{method}: unknown or wrong args */")
+    }
+
+    // --- seckit module ---
+
+    fn emit_seckit_call(&self, method: &str, args: &[Expr]) -> String {
+        match method {
+            "scan" => {
+                if args.len() == 3 {
+                    let host = self.expr_to_rust(&args[0]);
+                    let start = self.expr_to_rust(&args[1]);
+                    let end = self.expr_to_rust(&args[2]);
+                    return format!(
+                        "{{ use std::net::TcpStream; use std::time::Duration; \
+                        let __h = {host}.to_string(); \
+                        let mut __open: Vec<i64> = Vec::new(); \
+                        for __p in {start}..={end} {{ \
+                            let __a = format!(\"{{}}:{{}}\", __h, __p); \
+                            if let Ok(a) = __a.parse() {{ \
+                                if TcpStream::connect_timeout(&a, Duration::from_millis(300)).is_ok() {{ \
+                                    __open.push(__p); \
+                                }} \
+                            }} \
+                        }} \
+                        __open }}"
+                    );
+                }
+            }
+            "scan_fast" => {
+                if args.len() == 3 {
+                    let host = self.expr_to_rust(&args[0]);
+                    let start = self.expr_to_rust(&args[1]);
+                    let end = self.expr_to_rust(&args[2]);
+                    return format!(
+                        "{{ use std::net::TcpStream; use std::time::Duration; \
+                        use std::sync::{{Arc, Mutex}}; use std::thread; \
+                        let __h = {host}.to_string(); \
+                        let __open = Arc::new(Mutex::new(Vec::<i64>::new())); \
+                        let __ports: Vec<i64> = ({start}..={end}).collect(); \
+                        for __chunk in __ports.chunks(200) {{ \
+                            let mut __handles = Vec::new(); \
+                            for &__p in __chunk {{ \
+                                let __hc = __h.clone(); let __oc = __open.clone(); \
+                                __handles.push(thread::spawn(move || {{ \
+                                    let __a = format!(\"{{}}:{{}}\", __hc, __p); \
+                                    if let Ok(a) = __a.parse() {{ \
+                                        if TcpStream::connect_timeout(&a, Duration::from_millis(300)).is_ok() {{ \
+                                            __oc.lock().unwrap().push(__p); \
+                                        }} \
+                                    }} \
+                                }})); \
+                            }} \
+                            for __h in __handles {{ __h.join().ok(); }} \
+                        }} \
+                        let mut __r = __open.lock().unwrap().clone(); __r.sort(); __r }}"
+                    );
+                }
+            }
+            "grab" => {
+                if args.len() == 2 {
+                    let host = self.expr_to_rust(&args[0]);
+                    let port = self.expr_to_rust(&args[1]);
+                    return format!(
+                        "{{ use std::io::{{Read, Write}}; use std::net::TcpStream; use std::time::Duration; \
+                        let __a = format!(\"{{}}:{{}}\", {host}, {port}); \
+                        match TcpStream::connect_timeout(&__a.parse().unwrap(), Duration::from_secs(3)) {{ \
+                            Ok(mut __s) => {{ \
+                                __s.set_read_timeout(Some(Duration::from_secs(3))).ok(); \
+                                let __p = {port}; \
+                                if __p == 80_i64 || __p == 443_i64 || __p == 8080_i64 || __p == 8443_i64 {{ \
+                                    __s.write_all(b\"HEAD / HTTP/1.0\\r\\nHost: \\r\\n\\r\\n\").ok(); \
+                                }} \
+                                let mut __buf = vec![0u8; 2048]; \
+                                let __n = __s.read(&mut __buf).unwrap_or(0); \
+                                String::from_utf8_lossy(&__buf[..__n]).trim().to_string() \
+                            }} \
+                            Err(_) => String::new() \
+                        }} }}"
+                    );
+                }
+            }
+            "headers" => {
+                if args.len() == 1 {
+                    let url = self.expr_to_rust(&args[0]);
+                    return format!(
+                        "{{ use std::io::{{Read, Write}}; use std::net::TcpStream; use std::time::Duration; \
+                        let __url = {url}.to_string(); \
+                        let __host = __url.trim_start_matches(\"http://\").trim_start_matches(\"https://\") \
+                            .split('/').next().unwrap_or(\"\").to_string(); \
+                        let __port = if __url.starts_with(\"https\") {{ 443_i64 }} else {{ 80_i64 }}; \
+                        let __a = format!(\"{{}}:{{}}\", __host, __port); \
+                        match TcpStream::connect_timeout(&__a.parse().unwrap(), Duration::from_secs(3)) {{ \
+                            Ok(mut __s) => {{ \
+                                __s.set_read_timeout(Some(Duration::from_secs(3))).ok(); \
+                                let __req = format!(\"HEAD / HTTP/1.0\\r\\nHost: {{}}\\r\\n\\r\\n\", __host); \
+                                __s.write_all(__req.as_bytes()).ok(); \
+                                let mut __buf = vec![0u8; 4096]; \
+                                let __n = __s.read(&mut __buf).unwrap_or(0); \
+                                String::from_utf8_lossy(&__buf[..__n]).to_string() \
+                            }} \
+                            Err(e) => format!(\"error: {{}}\", e) \
+                        }} }}"
+                    );
+                }
+            }
+            "resolve" => {
+                if args.len() == 1 {
+                    let host = self.expr_to_rust(&args[0]);
+                    return format!(
+                        "{{ use std::net::ToSocketAddrs; \
+                        format!(\"{{}}:0\", {host}).to_socket_addrs() \
+                        .unwrap().map(|a| a.ip().to_string()).collect::<Vec<_>>() }}"
+                    );
+                }
+            }
+            _ => {}
+        }
+        format!("/* seckit.{method}: unknown or wrong args */")
     }
 
     // --- Utility ---

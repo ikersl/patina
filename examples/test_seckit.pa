@@ -1,0 +1,12 @@
+use seckit
+
+fn main() {
+    println("=== Seckit Port Scanner ===")
+    var host = "127.0.0.1"
+    println("Scanning {host} ports 1-100...")
+    var ports = seckit.scan(host, 1, 100)
+    println("Open ports:")
+    for p in ports {
+        println("  port {p}")
+    }
+}
