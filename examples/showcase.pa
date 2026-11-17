@@ -1,9 +1,9 @@
-# Patina v0.2 — Full Feature Showcase
+# Patina v0.3 — Full Feature Showcase
 
 use std.collections.HashMap
 
 const MAX_ITEMS: int = 100
-const VERSION = "0.2.0"
+const VERSION = "0.3.0"
 
 type IntList = Vec<int>
 

@@ -677,4 +677,4 @@ fn main() {
 
 ---
 
-*Patina v0.2 — because code should be easy to write and fast to run.*
+*Patina v0.3 — because code should be easy to write and fast to run.*

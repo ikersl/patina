@@ -10,7 +10,7 @@ use lexer::Lexer;
 use parser::Parser;
 use std::process::Command;
 
-const VERSION: &str = "0.2.0";
+const VERSION: &str = "0.3.0";
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
